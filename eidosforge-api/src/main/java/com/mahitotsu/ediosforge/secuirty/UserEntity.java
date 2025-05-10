@@ -1,22 +1,27 @@
 package com.mahitotsu.ediosforge.secuirty;
 
 import java.util.Collection;
-import java.util.UUID;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.mahitotsu.ediosforge.base.EntityBase;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Data
-public class UserEntity implements UserDetails {
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class UserEntity extends EntityBase implements UserDetails {
 
     @Embeddable
     @Data
@@ -26,10 +31,6 @@ public class UserEntity implements UserDetails {
         @NotBlank
         private String authority;
     }
-
-    @Id
-    @Column(updatable = false)
-    private UUID userId;
 
     @Column(unique = true, nullable = false)
     @NotBlank
@@ -51,6 +52,6 @@ public class UserEntity implements UserDetails {
     @Column(nullable = false)
     private boolean enabled;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private Collection<GrantedAuthorityEntity> authorities;
 }

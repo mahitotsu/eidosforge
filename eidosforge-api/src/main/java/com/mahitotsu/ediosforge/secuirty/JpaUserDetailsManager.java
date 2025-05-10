@@ -1,19 +1,20 @@
 package com.mahitotsu.ediosforge.secuirty;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 @Service
 public class JpaUserDetailsManager implements UserDetailsManager {
@@ -43,11 +44,17 @@ public class JpaUserDetailsManager implements UserDetailsManager {
         this.userRepository.save(this.copyProperties(user, new UserEntity()));
     }
 
-    @PreAuthorize("authentication.name == user.username or hasRole('ADMIN')")
+    @PreAuthorize("authentication.name == #user.username or hasRole('ADMIN')")
     @Transactional
     @Override
-    public void updateUser(final UserDetails user) {
-        this.userRepository.save(this.copyProperties(user, this.findByUsername(user.getUsername())));
+    public void updateUser(@P("user") final UserDetails user) {
+
+        final UserEntity entity = this.findByUsername(user.getUsername());
+        if (!ObjectUtils.nullSafeEquals(user.getPassword(), entity.getPassword())) {
+            throw new BadCredentialsException("The specified user does not have a valid password.");
+        }
+
+        this.userRepository.save(this.copyProperties(user, entity));
     }
 
     private UserEntity copyProperties(final UserDetails user, final UserEntity entity) {
@@ -57,16 +64,13 @@ public class JpaUserDetailsManager implements UserDetailsManager {
             return null;
         }
 
-        if (u.getUserId() == null) {
-            u.setUserId(UUID.randomUUID());
-        }
         u.setUsername(user.getUsername());
         u.setPassword(user.getPassword());
 
-        u.setAccountNonExpired(true);
-        u.setAccountNonLocked(true);
-        u.setCredentialsNonExpired(true);
-        u.setEnabled(true);
+        u.setAccountNonExpired(user.isAccountNonExpired());
+        u.setAccountNonLocked(user.isAccountNonLocked());
+        u.setCredentialsNonExpired(user.isCredentialsNonExpired());
+        u.setEnabled(user.isEnabled());
 
         if (u.getAuthorities() == null) {
             u.setAuthorities(new ArrayList<>());
