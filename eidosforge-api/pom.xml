@@ -103,6 +103,7 @@
                         -javaagent:${org.mockito:mockito-core:jar}
                         -Xshare:off
                     </argLine>
+
                 </configuration>
             </plugin>
         </plugins>

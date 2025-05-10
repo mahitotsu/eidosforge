@@ -21,23 +21,23 @@ public class TestRuntimeEnvironment {
     private Environment env;
 
     @Bean
-    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    public TestRestTemplate testRestTemplate() {
-
-        final String port = this.env.getProperty("local.server.port");
-        return new TestRestTemplate(new RestTemplateBuilder().rootUri("http://localhost:" + port));
-    }
-
-    @Bean
     @ServiceConnection
     public PostgreSQLContainer<?> postgreSQLContainer() {
 
         final DockerImageName imageName = DockerImageName
                 .parse("public.ecr.aws/docker/library/postgres:15.4-alpine3.18").asCompatibleSubstituteFor("postgres");
 
-        final PostgreSQLContainer<?> psql = new PostgreSQLContainer<>(imageName);
-        psql.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class)));
+        final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(imageName);
+        postgres.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(imageName.asCanonicalNameString())));
 
-        return psql;
+        return postgres;
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public TestRestTemplate testRestTemplate() {
+
+        final String port = this.env.getRequiredProperty("local.server.port");
+        return new TestRestTemplate(new RestTemplateBuilder().rootUri("http://localhost:" + port));
     }
 }
